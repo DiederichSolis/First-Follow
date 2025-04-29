@@ -68,4 +68,85 @@ class GrammarAnalyzer:
                             changed = True
         
         return self.first_sets
-     
+
+    
+    def compute_follow(self):
+        """Calcula los conjuntos FOLLOW para todos los no terminales."""
+        if not self.first_sets:
+            self.compute_first()
+            
+        # Inicializar FOLLOW para cada no terminal como conjunto vacío
+        self.follow_sets = {nt: set() for nt in self.non_terminals}
+        # Regla 1: $ está en FOLLOW(S)
+        self.follow_sets[self.start_symbol].add('$')
+        
+        changed = True
+        while changed:
+            changed = False
+            for nt in self.non_terminals:
+                for production in self.grammar[nt]:
+                    # Para cada no terminal en la producción
+                    for i in range(len(production)):
+                        B = production[i]
+                        if B not in self.non_terminals:
+                            continue
+                        
+                        # Regla 2: A → αBβ
+                        if i < len(production) - 1:
+                            beta = production[i+1:]
+                            first_beta = self._compute_first_for_sequence(beta)
+                            
+                            # Añadir FIRST(β) - {ε} a FOLLOW(B)
+                            before_len = len(self.follow_sets[B])
+                            self.follow_sets[B].update(first_beta - {'ε'})
+                            if len(self.follow_sets[B]) > before_len:
+                                changed = True
+                            
+                            # Regla 3: Si ε está en FIRST(β), añadir FOLLOW(A) a FOLLOW(B)
+                            if 'ε' in first_beta:
+                                before_len = len(self.follow_sets[B])
+                                self.follow_sets[B].update(self.follow_sets[nt])
+                                if len(self.follow_sets[B]) > before_len:
+                                    changed = True
+                        else:
+                            # Regla 3: A → αB (caso donde β es ε)
+                            before_len = len(self.follow_sets[B])
+                            self.follow_sets[B].update(self.follow_sets[nt])
+                            if len(self.follow_sets[B]) > before_len:
+                                changed = True
+        
+        return self.follow_sets
+    
+    def _compute_first_for_sequence(self, sequence):
+        """Calcula FIRST para una secuencia de símbolos."""
+        first = set()
+        all_epsilon = True
+        
+        for symbol in sequence:
+            if symbol in self.terminals:
+                first.add(symbol)
+                all_epsilon = False
+                break
+            elif symbol in self.non_terminals:
+                first.update(self.first_sets[symbol] - {'ε'})
+                if 'ε' not in self.first_sets[symbol]:
+                    all_epsilon = False
+                    break
+        
+        if all_epsilon:
+            first.add('ε')
+            
+        return first
+    
+    def get_results_as_string(self):
+        """Devuelve los resultados como una cadena formateada."""
+        result = "Conjuntos FIRST:\n"
+        for nt in sorted(self.first_sets.keys()):
+            result += f"FIRST({nt}) = {sorted(self.first_sets[nt])}\n"
+        
+        result += "\nConjuntos FOLLOW:\n"
+        for nt in sorted(self.follow_sets.keys()):
+            result += f"FOLLOW({nt}) = {sorted(self.follow_sets[nt])}\n"
+        
+        return result
+

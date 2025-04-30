@@ -149,4 +149,83 @@ class GrammarAnalyzer:
             result += f"FOLLOW({nt}) = {sorted(self.follow_sets[nt])}\n"
         
         return result
+def read_grammar_from_file(filename):
+    """
+    Lee una gramática desde un archivo de texto.
+    """
+    grammar = {}
+    start_symbol = None
+    
+    with open(filename, 'r', encoding='utf-8') as file:
+        lines = file.readlines()
+        
+        if not lines:
+            raise ValueError("El archivo está vacío")
+        
+        # Primera línea es el símbolo inicial
+        start_symbol = lines[0].strip()
+        
+        for line in lines[1:]:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue  # Saltar líneas vacías o comentarios
+            
+            if '->' not in line:
+                raise ValueError(f"Línea mal formada: {line}")
+            
+            # Dividir izquierda y derecha
+            left, right = line.split('->', 1)
+            left = left.strip()
+            
+            # Dividir las producciones
+            productions = [prod.strip() for prod in right.split('|')]
+            
+            # Procesar cada producción
+            grammar[left] = []
+            for prod in productions:
+                if prod == 'ε':
+                    grammar[left].append(['ε'])
+                else:
+                    # Dividir los símbolos (asumiendo que están separados por espacios)
+                    symbols = prod.split()
+                    grammar[left].append(symbols)
+    
+    return grammar, start_symbol
 
+
+def write_results_to_file(filename, content):
+    """Escribe el contenido en un archivo de texto."""
+    with open(filename, 'w', encoding='utf-8') as file:
+        file.write(content)
+
+
+def process_grammar(input_file, output_file):
+    """
+    Procesa una gramática desde un archivo de entrada y escribe los resultados en un archivo de salida.
+    """
+    try:
+        # Leer gramática
+        grammar, start_symbol = read_grammar_from_file(input_file)
+        
+        # Analizar gramática
+        analyzer = GrammarAnalyzer(grammar, start_symbol)
+        analyzer.compute_first()
+        analyzer.compute_follow()
+        
+        # Obtener resultados
+        results = analyzer.get_results_as_string()
+        
+        # Escribir resultados
+        write_results_to_file(output_file, results)
+        print(f"Análisis completado. Resultados escritos en {output_file}")
+        
+    except Exception as e:
+        print(f"Error: {str(e)}")
+
+
+if __name__ == "__main__":
+   
+    input_filename = "gramatica.txt"  
+    output_filename = "resultados.txt"  
+    
+    process_grammar(input_file=input_filename, output_file=output_filename)

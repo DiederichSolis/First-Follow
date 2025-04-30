@@ -1,0 +1,15 @@
+Conjuntos FIRST:
+FIRST(B) = ['c']
+FIRST(C) = ['b', 'ε']
+FIRST(D) = ['f', 'g', 'ε']
+FIRST(E) = ['g', 'ε']
+FIRST(F) = ['f', 'ε']
+FIRST(S) = ['a']
+
+Conjuntos FOLLOW:
+FOLLOW(B) = ['f', 'g', 'h']
+FOLLOW(C) = ['f', 'g', 'h']
+FOLLOW(D) = ['h']
+FOLLOW(E) = ['f', 'h']
+FOLLOW(F) = ['h']
+FOLLOW(S) = ['$']
